@@ -104,3 +104,50 @@ exports.eventBook = async (req, res, next) => {
     return next(new AppError(error.message, 500));
   }
 };
+
+
+
+exports.helloTourist = (req, res) => {
+  res.send('Hello World from Tourist Controller');
+};
+
+
+
+exports.getTouristProfileById = async (req, res, next) => {
+  const touristId = parseInt(req.params.id);
+
+  try {
+    const tourist = await prisma.tourist.findUnique({
+      where: { id: touristId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            contactNo: true,
+            imageUrl: true,
+          }
+        }
+      }
+    });
+
+    if (!tourist) {
+      return next(new AppError("Tourist not found.", 404));
+    }
+
+    res.status(200).json({
+      status: true,
+      data: {
+        id: tourist.user.id,
+        name: tourist.user.name,
+        email: tourist.user.email,
+        contactNo: tourist.user.contactNo,
+        imageUrl: tourist.user.imageUrl,
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tourist:", error);
+    next(new AppError(error.message, 500));
+  }
+};

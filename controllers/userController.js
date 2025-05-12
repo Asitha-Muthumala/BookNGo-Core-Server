@@ -97,3 +97,88 @@ exports.signinUser = async (req, res, next) => {
         return next(new AppError(err.message, 500));
     }
 };
+
+
+exports.updateUser = async (req, res, next) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { name, email, contactNo, imageUrl, password, currentPassword } = req.body;
+
+        // Basic validation
+        if (!name || !email) {
+            return res.status(400).json({
+                status: false,
+                message: 'Name and email are required'
+            });
+        }
+
+        // Check if email exists (excluding current user)
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                email: email,
+                NOT: { id: userId }
+            }
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                status: false,
+                message: 'Email already in use by another account'
+            });
+        }
+
+        // Prepare update data
+        const updateData = {
+            name,
+            email,
+            contactNo,
+            imageUrl
+        };
+
+        // Handle password change if provided
+        if (password) {
+            if (!currentPassword) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Current password is required to change password'
+                });
+            }
+
+            // Verify current password
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const isMatch = await comparePasswords(currentPassword, user.password);
+            
+            if (!isMatch) {
+                return res.status(400).json({
+                    status: false,
+                    message: 'Current password is incorrect'
+                });
+            }
+
+            // Hash new password
+            updateData.password = await generateHashedPassword(password);
+        }
+
+        // Update user
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: updateData
+        });
+
+        // Remove password from response
+        const { password: _, ...userData } = updatedUser;
+
+        res.status(200).json({
+            status: true,
+            data: userData
+        });
+
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({
+            status: false,
+            message: 'Failed to update user profile',
+            error: error.message
+        });
+    }
+};

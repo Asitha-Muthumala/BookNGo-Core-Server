@@ -53,7 +53,7 @@ exports.addEvent = async (req, res, next) => {
         category: req.body.category,
         maximumCount: req.body.maximumCount,
         cordinatorName: req.body.cordinatorName,
-        cordinatorContact: req.body.cordinatorContact,
+        cordinatorContacts: req.body.cordinatorContact,
         description: req.body.description,
         hashtag: req.body.hashtag,
         location: req.body.location,

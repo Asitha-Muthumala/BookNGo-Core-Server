@@ -3,6 +3,8 @@ CREATE TABLE `User` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
+    `contactNo` VARCHAR(191),
+    `imageUrl` VARCHAR(191) ,
     `password` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `role` ENUM('TOURIST', 'ADMIN', 'BUSINESS') NOT NULL,
@@ -36,8 +38,9 @@ CREATE TABLE `Event` (
     `startTime` VARCHAR(191) NOT NULL,
     `endTime` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NOT NULL,
-    `bannerUrl` VARCHAR(191) NULL,
+    `bannerUrl` VARCHAR(250) NULL,
     `businessId` INTEGER NOT NULL,
+     `price` DOUBLE NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -47,3 +50,5 @@ ALTER TABLE `Business` ADD CONSTRAINT `Business_id_fkey` FOREIGN KEY (`id`) REFE
 
 -- AddForeignKey
 ALTER TABLE `Event` ADD CONSTRAINT `Event_businessId_fkey` FOREIGN KEY (`businessId`) REFERENCES `Business`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
