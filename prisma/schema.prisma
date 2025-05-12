@@ -7,136 +7,112 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  TOURIST
-  ADMIN
-  BUSINESS
-}
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
+model business {
+  id    Int     @id
+  user  user    @relation(fields: [id], references: [id], map: "Business_id_fkey")
+  event event[]
 }
 
-enum ApprovalAction {
-  CREATE
-  UPDATE
+model event {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  type                String
+  category            String
+  maximumCount        Int
+  cordinatorName      String
+  cordinatorContact   String
+  description         String
+  hashtag             String
+  location            String
+  country             String
+  discount            Float?
+  refundPolicy        String
+  startTime           String
+  endTime             String
+  date                DateTime
+  bannerUrl           String?
+  businessId          Int
+  business            business              @relation(fields: [businessId], references: [id], map: "Event_businessId_fkey")
+  eventcondition      eventcondition[]
+  eventspecification  eventspecification[]
+  pricecategory       pricecategory[]
+  touristeventbooking touristeventbooking[]
+
+  @@index([businessId], map: "Event_businessId_fkey")
 }
 
-enum approvalCategory{
-  EVENT
-  BUSINESS
+model eventcondition {
+  id        Int    @id @default(autoincrement())
+  condition String
+  eventId   Int
+  event     event  @relation(fields: [eventId], references: [id], map: "EventCondition_eventId_fkey")
+
+  @@index([eventId], map: "EventCondition_eventId_fkey")
 }
 
+model eventspecification {
+  id       Int    @id @default(autoincrement())
+  specName String
+  eventId  Int
+  event    event  @relation(fields: [eventId], references: [id], map: "EventSpecification_eventId_fkey")
 
-model User { 
+  @@index([eventId], map: "EventSpecification_eventId_fkey")
+}
+
+model pricecategory {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  price               Float
+  eventId             Int
+  event               event                 @relation(fields: [eventId], references: [id], map: "PriceCategory_eventId_fkey")
+  touristeventbooking touristeventbooking[]
+
+  @@index([eventId], map: "PriceCategory_eventId_fkey")
+}
+
+model tourist {
+  id                  Int                   @id
+  email               String?               @db.VarChar(255)
+  contactNo           String?               @db.VarChar(20)
+  profilePic          String?               @db.VarChar(500)
+  userId              Int?
+  user                user                  @relation(fields: [id], references: [id], map: "Tourist_id_fkey")
+  touristeventbooking touristeventbooking[]
+}
+
+model touristeventbooking {
+  id              Int           @id @default(autoincrement())
+  touristId       Int
+  eventId         Int
+  priceCategoryId Int
+  paymentAmount   Float
+  ticketCount     Int
+  paymentDate     DateTime      @default(now())
+  isRefunded      Boolean       @default(false)
+  event           event         @relation(fields: [eventId], references: [id], map: "TouristEventBooking_eventId_fkey")
+  pricecategory   pricecategory @relation(fields: [priceCategoryId], references: [id], map: "TouristEventBooking_priceCategoryId_fkey")
+  tourist         tourist       @relation(fields: [touristId], references: [id], map: "TouristEventBooking_touristId_fkey")
+
+  @@index([eventId], map: "TouristEventBooking_eventId_fkey")
+  @@index([priceCategoryId], map: "TouristEventBooking_priceCategoryId_fkey")
+  @@index([touristId], map: "TouristEventBooking_touristId_fkey")
+}
+
+model user {
   id        Int       @id @default(autoincrement())
   name      String
   email     String    @unique(map: "User_email_key")
   password  String
   createdAt DateTime  @default(now())
-  role      Role
-  
-  business  Business?
-  tourist Tourist?
+  role      user_role
+  contactNo String?
+  imageUrl  String?
+  business  business?
+  tourist   tourist?
 }
 
-model Business {
-  id   Int  @id
-  user User @relation(fields: [id], references: [id])
-  events Event[]
-  approvals Approval[] 
+enum user_role {
+  TOURIST
+  ADMIN
+  BUSINESS
 }
-
-model Tourist {
-  id   Int  @id
-  user User @relation(fields: [id], references: [id])
-  bookings TouristEventBooking[]
-}
-
-model Event {
-  id Int @id @default(autoincrement())
-  name String
-  type String
-  category String
-  maximumCount Int
-  cordinatorName String
-  cordinatorContact String
-  description String
-  hashtag String
-  location String
-  country String
-  discount Float?
-  refundPolicy String
-  startTime String
-  endTime String
-  date DateTime
-  bannerUrl String?
-
-  businessId Int
-  business Business @relation(fields: [businessId], references: [id])
-
-  specifications    EventSpecification[]
-  conditions        EventCondition[]
-  priceCategories   PriceCategory[]
-  bookings TouristEventBooking[]
-
-  approvals Approval[] 
-}
-
-model EventSpecification {
-  id Int @id @default(autoincrement())
-  specName String
-  eventId Int
-  event Event  @relation(fields: [eventId], references: [id])
-}
-
-model EventCondition {
-  id Int @id @default(autoincrement())
-  condition String
-  eventId Int
-  event Event  @relation(fields: [eventId], references: [id])
-}
-
-model PriceCategory {
-  id Int @id @default(autoincrement())
-  name String
-  price Float
-  eventId Int
-  event Event @relation(fields: [eventId], references: [id])
-  bookings TouristEventBooking[]
-}
-
-model TouristEventBooking {
-  id Int @id @default(autoincrement())
-  touristId Int
-  eventId Int
-  priceCategoryId Int
-
-  paymentAmount Float
-  ticketCount Int
-  paymentDate DateTime @default(now())
-  isRefunded Boolean @default(false)
-
-  tourist Tourist @relation(fields: [touristId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
-  priceCategory PriceCategory @relation(fields: [priceCategoryId], references: [id])
-}
-
-model Approval {
-  id Int @id @default(autoincrement())
-  action ApprovalAction 
-  status ApprovalStatus 
-  approvalCategory approvalCategory
-  reason String?         
-  authorizedBy String?         
-  authorizedAt DateTime?        
-  createdAt DateTime @default(now())
-
-  event Event?  @relation(fields: [eventId], references: [id])
-  eventId Int?
-
-  business Business? @relation(fields: [businessId], references: [id])
-  businessId Int?
-}
-
