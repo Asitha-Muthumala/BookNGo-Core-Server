@@ -176,3 +176,133 @@ exports.getBookingById = async (req, res, next) => {
     return next(new AppError(error.message, 500));
   }
 }
+
+
+
+
+exports.getTouristProfileById = async (req, res, next) => {
+  const touristId = parseInt(req.params.id);
+
+  try {
+    const tourist = await prisma.tourist.findUnique({
+      where: { id: touristId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            // contactNo: true,
+            // imageUrl: true,
+          }
+        }
+      }
+    });
+
+    if (!tourist) {
+      return next(new AppError("Tourist not found.", 404));
+    }
+
+    res.status(200).json({
+      status: true,
+      data: {
+        id: tourist.user.id,
+        name: tourist.user.name,
+        email: tourist.user.email,
+        contactNo: tourist.user.contactNo,
+        imageUrl: tourist.user.imageUrl,
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching tourist:", error);
+    next(new AppError(error.message, 500));
+  }
+};
+
+
+exports.getAllEvents = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const events = await prisma.event.findMany({
+      skip,
+      take: parseInt(limit),
+      orderBy: { date: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        location: true,
+        date: true,
+        maximumCount: true,
+        bannerUrl: true,
+        hashtag: true,
+        bookings: {
+          select: {
+            ticketCount: true,
+          },
+        },
+        priceCategories: true,
+      },
+    });
+
+    const formattedEvents = events.map((event) => {
+      const bookingCount = event.bookings.reduce((sum, b) => sum + b.ticketCount, 0);
+      const minPrice = event.priceCategories.length
+        ? Math.min(...event.priceCategories.map(p => p.price))
+        : 0;
+      return {
+        eventId: event.id,
+        name: event.name,
+        category: event.category,
+        location: event.location,
+        date: event.date,
+        maximumCount: event.maximumCount,
+        bannerUrl: event.bannerUrl,
+        keyword: event.hashtag,
+        currentBookingCount: bookingCount,
+        price: minPrice,
+      };
+    });
+
+    const total = await prisma.event.count();
+
+    res.status(200).json({
+      status: true,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalEvents: total,
+      events: formattedEvents,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 500));
+  }
+};
+
+
+
+exports.userDetails = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+     const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    res.status(200).json({
+      status: true,
+      user: user,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 500));
+  }
+};
