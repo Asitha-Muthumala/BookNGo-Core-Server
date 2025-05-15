@@ -2,6 +2,7 @@ require('dotenv').config();
 const prisma = require('../prisma/prismaClient');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const sendEmail = require("../utils/SendEmail");
 const AppError = require("../utils/AppError");
 const { SIGNUP_USER_MODEL, SIGNIN_USER_MODEL } = require('../validation/user');
 const validateRequest = require('../utils/validateRequest');
@@ -85,6 +86,8 @@ exports.signinUser = async (req, res, next) => {
         if (!isPasswordMatch) return next(new AppError("Invalid email or password", 400));
 
         const token = generateToken(user);
+
+        sendEmail("akmuthumala1@gmail.com", "BookNGo Notification", "Test");
 
         res.status(200).json({ 
             status: true, 
