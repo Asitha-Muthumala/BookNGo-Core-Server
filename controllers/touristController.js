@@ -3,7 +3,9 @@ const prisma = require("../prisma/prismaClient");
 const AppError = require("../utils/AppError");
 const { CREATE_EVENT_MODEL } = require("../validation/business");
 const validateRequest = require("../utils/validateRequest");
+const { PrismaClient } = require('@prisma/client');
 
+const bcrypt = require('bcrypt');
 exports.eventBook = async (req, res, next) => {
   try {
     const { eventId, priceCategoryId, ticketCount, paymentAmount } = req.body;
@@ -228,6 +230,9 @@ exports.getAllEvents = async (req, res, next) => {
     const events = await prisma.event.findMany({
       skip,
       take: parseInt(limit),
+        where: {
+        status: true, 
+      },
       orderBy: { date: 'asc' },
       select: {
         id: true,
@@ -307,6 +312,10 @@ exports.userDetails = async (req, res, next) => {
   }
 };
 
+const generateHashedPassword = async (password) => {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+};
 
 exports.getBookingByTouristId = async (req, res, next) => {
   try {
@@ -334,5 +343,60 @@ exports.getBookingByTouristId = async (req, res, next) => {
     });
   } catch (error) {
     return next(new AppError(error.message, 500));
+  }
+};
+
+exports.updateUserProfile = async (req, res, next) => {
+  const { userId } = req.params;
+  const { name, email, currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    });
+
+    if (!user) {
+      return res.status(404).json({ status: false, message: 'User not found' });
+    }
+
+    // If password change is requested
+    if (newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ status: false, message: 'Current password is incorrect' });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ status: false, message: 'Password must be at least 6 characters' });
+      }
+
+      const hashedPassword = await generateHashedPassword(newPassword);
+
+      const updatedUser = await prisma.user.update({
+        where: { id: parseInt(userId) },
+        data: {
+          name,
+          email,
+          password: hashedPassword
+        },
+      });
+
+      return res.status(200).json({ status: true, message: 'Profile and password updated', data: updatedUser });
+    }
+
+    // If no password change
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: {
+        name,
+        email
+      },
+    });
+
+    res.status(200).json({ status: true, message: 'Profile updated', data: updatedUser });
+
+  } catch (err) {
+    console.error('Update profile error:', err);
+    return next(new AppError(err.message || 'Server error', 500));
   }
 };
