@@ -228,6 +228,9 @@ exports.getAllEvents = async (req, res, next) => {
     const events = await prisma.event.findMany({
       skip,
       take: parseInt(limit),
+        where: {
+        status: true, 
+      },
       orderBy: { date: 'asc' },
       select: {
         id: true,
@@ -334,5 +337,57 @@ exports.getBookingByTouristId = async (req, res, next) => {
     });
   } catch (error) {
     return next(new AppError(error.message, 500));
+  }
+};
+
+
+exports.updateUserProfile = async (req, res) => {
+  const { userId } = req.params;
+  const { name, email, currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    });
+
+    if (!user) {
+      return res.status(404).json({ status: false, message: 'User not found' });
+    }
+
+    // If changing password, validate currentPassword
+    if (newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ status: false, message: 'Current password is incorrect' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      const updatedUser = await prisma.user.update({
+        where: { id: parseInt(userId) },
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+      });
+
+      return res.status(200).json({ status: true, message: 'Profile updated with password', data: updatedUser });
+    }
+
+    // Update without changing password
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: {
+        name,
+        email,
+      },
+    });
+
+    res.status(200).json({ status: true, message: 'Profile updated', data: updatedUser });
+
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ status: false, message: 'Server error', error: error.message });
   }
 };
