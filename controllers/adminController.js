@@ -47,7 +47,11 @@ exports.getApprovedEvents = async (req, res) => {
       },
       include: {
         event: true,
-        business: true
+        business: {
+          include: {
+            user: true
+          }
+        }
       }
     });
     res.json(approvals);
