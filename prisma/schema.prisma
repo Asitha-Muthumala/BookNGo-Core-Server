@@ -46,6 +46,7 @@ model Business {
   user User @relation(fields: [id], references: [id])
   events Event[]
   approvals Approval[] 
+  status    Boolean  @default(true)
 }
 
 model Tourist {
@@ -71,6 +72,7 @@ model Event {
   startTime String
   endTime String
   date DateTime
+  status Boolean @default(true) 
   bannerUrl String?              @db.VarChar(6000)
 
   businessId Int

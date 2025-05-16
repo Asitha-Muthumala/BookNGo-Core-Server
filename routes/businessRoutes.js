@@ -11,4 +11,5 @@ router.get('/getPaginatedEvents', getBusinessEventsPaginated);
 router.get("/getPaginatedBookings", getBusinessBookings);
 router.get("/getBusinessBasicDetails", getBusinessBasicDetails);
 
+
 module.exports = router;
