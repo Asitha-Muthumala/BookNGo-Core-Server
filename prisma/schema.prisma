@@ -46,6 +46,7 @@ model Business {
   user User @relation(fields: [id], references: [id])
   events Event[]
   approvals Approval[] 
+  status    Boolean  @default(true)
 }
 
 model Tourist {

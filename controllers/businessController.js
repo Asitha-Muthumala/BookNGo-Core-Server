@@ -218,7 +218,7 @@ exports.getBusinessEventsPaginated = async (req, res, next) => {
       },
     });
     
-    if (!user || !user.business) {
+    if (!user) {
       return next(new AppError("Invalid request", 400));
     }
 
@@ -255,6 +255,7 @@ exports.getBusinessEventsPaginated = async (req, res, next) => {
               ? Math.min(...event.priceCategories.map(p => p.price))
               : 0;
       return {
+        eventId: event.id,
         name: event.name,
         category: event.category,
         location: event.location,
@@ -384,12 +385,4 @@ exports.getBusinessBasicDetails = async (req, res, next) => {
 
 
 
-exports.getBusinessCount = async (req, res) => {
-  try {
-    const count = await prisma.business.count();
-    return res.status(200).json({ businessCount: count });
-  } catch (error) {
-    console.error("Error fetching business count:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+

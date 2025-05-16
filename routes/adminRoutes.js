@@ -20,6 +20,10 @@ router.get('/booking-stats', controller.getBookingStats);
 // router.get('/event/:id', controller.getEventById);
 router.get('/event/search', controller.getEventsByName);
 router.put('/event/:id/', controller.toggleEventStatus);
+router.get('/business/count', controller.getBusinessCount);
+router.get('/tourist/count', controller.getTouristCount);
+router.get('/business/search', controller.searchBusinessesByName);
+router.put('/business/:id', controller.toggleBusinessStatus);
 
 
 module.exports = router;
