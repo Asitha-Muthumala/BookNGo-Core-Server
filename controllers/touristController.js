@@ -3,7 +3,9 @@ const prisma = require("../prisma/prismaClient");
 const AppError = require("../utils/AppError");
 const { CREATE_EVENT_MODEL } = require("../validation/business");
 const validateRequest = require("../utils/validateRequest");
+const { PrismaClient } = require('@prisma/client');
 
+const bcrypt = require('bcrypt');
 exports.eventBook = async (req, res, next) => {
   try {
     const { eventId, priceCategoryId, ticketCount, paymentAmount } = req.body;
@@ -310,6 +312,10 @@ exports.userDetails = async (req, res, next) => {
   }
 };
 
+const generateHashedPassword = async (password) => {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+};
 
 exports.getBookingByTouristId = async (req, res, next) => {
   try {
@@ -340,8 +346,7 @@ exports.getBookingByTouristId = async (req, res, next) => {
   }
 };
 
-
-exports.updateUserProfile = async (req, res) => {
+exports.updateUserProfile = async (req, res, next) => {
   const { userId } = req.params;
   const { name, email, currentPassword, newPassword } = req.body;
 
@@ -354,40 +359,44 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ status: false, message: 'User not found' });
     }
 
-    // If changing password, validate currentPassword
+    // If password change is requested
     if (newPassword) {
       const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) {
         return res.status(401).json({ status: false, message: 'Current password is incorrect' });
       }
 
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      if (newPassword.length < 6) {
+        return res.status(400).json({ status: false, message: 'Password must be at least 6 characters' });
+      }
+
+      const hashedPassword = await generateHashedPassword(newPassword);
 
       const updatedUser = await prisma.user.update({
         where: { id: parseInt(userId) },
         data: {
           name,
           email,
-          password: hashedPassword,
+          password: hashedPassword
         },
       });
 
-      return res.status(200).json({ status: true, message: 'Profile updated with password', data: updatedUser });
+      return res.status(200).json({ status: true, message: 'Profile and password updated', data: updatedUser });
     }
 
-    // Update without changing password
+    // If no password change
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(userId) },
       data: {
         name,
-        email,
+        email
       },
     });
 
     res.status(200).json({ status: true, message: 'Profile updated', data: updatedUser });
 
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ status: false, message: 'Server error', error: error.message });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    return next(new AppError(err.message || 'Server error', 500));
   }
 };
