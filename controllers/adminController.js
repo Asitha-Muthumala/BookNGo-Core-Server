@@ -23,7 +23,11 @@ exports.getPendingApprovals = async (req, res) => {
       },
       include: {
         event: true,
-        business: true,
+        business: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
     res.json(pendingApprovals);
@@ -272,7 +276,7 @@ exports.getEventsByName = async (req, res) => {
       include: {
         business: {
           include: {
-            user: true, 
+            user: true,
           }
         }
       }
@@ -310,4 +314,92 @@ exports.toggleEventStatus = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+exports.getBusinessCount = async (req, res) => {
+  try {
+    const count = await prisma.business.count();
+    return res.status(200).json({ businessCount: count });
+  } catch (error) {
+    console.error("Error fetching business count:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.getTouristCount = async (req, res) => {
+  try {
+    const count = await prisma.user.count({
+      where: {
+        role: 'TOURIST'
+      }
+    });
+
+    return res.status(200).json({ touristCount: count });
+  } catch (error) {
+    console.error("Error fetching tourist count from User table:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+// GET /api/admin/business/search?name=xyz
+exports.searchBusinessesByName = async (req, res) => {
+  try {
+    const { name } = req.query;
+    console.log("name", name);
+    if (!name) {
+      return res.status(400).json({ error: 'Business name is required' });
+    }
+
+    const businesses = await prisma.business.findMany({
+      where: {
+        user: {
+          name: {
+            contains: name,
+          },
+        },
+      },
+      include: {
+        user: true,
+      }
+
+
+    });
+
+    res.json(businesses);
+  } catch (error) {
+    console.error('Error searching businesses:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// PUT /api/admin/business/:id
+exports.toggleBusinessStatus = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const existingBusiness = await prisma.business.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!existingBusiness) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    const updatedBusiness = await prisma.business.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: !existingBusiness.status,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    res.json(updatedBusiness);
+  } catch (error) {
+    console.error('Error toggling business status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 

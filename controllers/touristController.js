@@ -177,18 +177,3 @@ exports.getBookingById = async (req, res, next) => {
   }
 }
 
-exports.getTouristCount = async (req, res) => {
-    try {
-        const count = await prisma.user.count({
-            where: {
-                role: 'TOURIST'
-            }
-        });
-
-        return res.status(200).json({ touristCount: count });
-    } catch (error) {
-        console.error("Error fetching tourist count from User table:", error);
-        return res.status(500).json({ error: "Internal Server Error" });
-    }
-};
-
