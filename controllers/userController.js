@@ -87,7 +87,7 @@ exports.signinUser = async (req, res, next) => {
 
         const token = generateToken(user);
 
-        sendEmail("akmuthumala1@gmail.com", "BookNGo Notification", "Test");
+        // sendEmail("akmuthumala1@gmail.com", "BookNGo Notification", "Test");
 
         res.status(200).json({ 
             status: true, 

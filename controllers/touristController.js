@@ -145,13 +145,44 @@ exports.getBookings = async (req, res, next) => {
   }
 }
 
+// exports.getBookingById = async (req, res, next) => {
+//   try {
+//     const bookingId = parseInt(req.params.id);
+
+//     if (isNaN(bookingId)) {
+//       return next(new AppError("Invalid booking ID", 400));
+
+//     }
+
+//     const booking = await prisma.touristEventBooking.findFirst({
+//       where: {
+//         id: bookingId,
+//       },
+//       include: {
+//         event: true,
+//         priceCategory: true,
+//       },
+//     });
+
+//     if (!booking) {
+//       return next(new AppError("Booking not found", 404));
+//     }
+
+//     res.status(200).json({
+//       status: true,
+//       booking: booking,
+//     });
+//   } catch (error) {
+//     return next(new AppError(error.message, 500));
+//   }
+// }
+
 exports.getBookingById = async (req, res, next) => {
   try {
     const bookingId = parseInt(req.params.id);
 
     if (isNaN(bookingId)) {
       return next(new AppError("Invalid booking ID", 400));
-
     }
 
     const booking = await prisma.touristEventBooking.findFirst({
@@ -161,6 +192,11 @@ exports.getBookingById = async (req, res, next) => {
       include: {
         event: true,
         priceCategory: true,
+        tourist: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
 
@@ -174,5 +210,27 @@ exports.getBookingById = async (req, res, next) => {
     });
   } catch (error) {
     return next(new AppError(error.message, 500));
+  }
+};
+
+exports.updateEvent = async (req, res, next) => {
+  const eventId = parseInt(req.params.id);
+  const { name, location } = req.body;
+
+  try {
+    const updated = await prisma.event.update({
+      where: { id: eventId },
+      data: {
+        name,
+        location,
+      },
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      event: updated 
+    });
+  } catch (err) {
+    return next(new AppError(err.message, 500));
   }
 }

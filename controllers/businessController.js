@@ -255,6 +255,7 @@ exports.getBusinessEventsPaginated = async (req, res, next) => {
               ? Math.min(...event.priceCategories.map(p => p.price))
               : 0;
       return {
+        id: event.id,
         name: event.name,
         category: event.category,
         location: event.location,
