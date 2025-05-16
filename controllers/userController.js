@@ -93,6 +93,7 @@ exports.signinUser = async (req, res, next) => {
             status: true, 
             message: "Signin successful", 
             token: token, 
+            userId: user.id,
             role: user.role ,
             expiredIn: expiredIn
         });
