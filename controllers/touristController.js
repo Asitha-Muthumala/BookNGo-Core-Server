@@ -21,16 +21,16 @@ exports.eventBook = async (req, res, next) => {
       return next(new AppError("Only tourist users can book events", 403));
     }
 
-    const existingBooking = await prisma.touristEventBooking.findFirst({
-      where: {
-        touristId: user.tourist.id,
-        eventId,
-      },
-    });
+    // const existingBooking = await prisma.touristEventBooking.findFirst({
+    //   where: {
+    //     touristId: user.tourist.id,
+    //     eventId,
+    //   },
+    // });
 
-    if (existingBooking) {
-      return next(new AppError("Event already booked by this user", 409));
-    }
+    // if (existingBooking) {
+    //   return next(new AppError("Event already booked by this user", 409));
+    // }
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -301,6 +301,36 @@ exports.userDetails = async (req, res, next) => {
     res.status(200).json({
       status: true,
       user: user,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 500));
+  }
+};
+
+
+exports.getBookingByTouristId = async (req, res, next) => {
+  try {
+    const touristId = parseInt(req.params.id);
+
+    if (isNaN(touristId)) {
+      return next(new AppError("Invalid tourist ID", 400));
+    }
+
+    const bookings = await prisma.touristEventBooking.findMany({
+      where: { touristId },
+      include: {
+        event: true,
+        priceCategory: true,
+      },
+    });
+
+    if (!bookings || bookings.length === 0) {
+      return next(new AppError("No bookings found for this tourist", 404));
+    }
+
+    res.status(200).json({
+      status: true,
+      bookings,
     });
   } catch (error) {
     return next(new AppError(error.message, 500));
