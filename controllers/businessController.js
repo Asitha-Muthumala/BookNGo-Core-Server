@@ -218,7 +218,7 @@ exports.getBusinessEventsPaginated = async (req, res, next) => {
       },
     });
     
-    if (!user || !user.business) {
+    if (!user) {
       return next(new AppError("Invalid request", 400));
     }
 
@@ -255,7 +255,7 @@ exports.getBusinessEventsPaginated = async (req, res, next) => {
               ? Math.min(...event.priceCategories.map(p => p.price))
               : 0;
       return {
-        id: event.id,
+        eventId: event.id,
         name: event.name,
         category: event.category,
         location: event.location,
@@ -381,4 +381,8 @@ exports.getBusinessBasicDetails = async (req, res, next) => {
     res.status(500).json({ status: false, message: error.message });
   }
 };
+
+
+
+
 

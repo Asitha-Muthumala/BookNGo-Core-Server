@@ -100,3 +100,4 @@ exports.signinUser = async (req, res, next) => {
         return next(new AppError(err.message, 500));
     }
 };
+
